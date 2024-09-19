@@ -78,16 +78,42 @@ class Subview(QtWidgets.QGraphicsView):
 		self.oldZoom = self.zoom;
 		self.oldAngle = self.angle;
 		self.point = event.pos()
-		super().mousePressEvent(event);
+		if event.button() == QtCore.Qt.MiddleButton:
+			# pretend we pressed left
+			super().mousePressEvent(QtGui.QMouseEvent(
+				event.type(),
+				event.pos(),
+				QtCore.Qt.LeftButton,
+				QtCore.Qt.LeftButton,
+				event.modifiers()
+			));
+		else:
+			super().mousePressEvent(event);
+		pass
+
+	def mouseReleaseEvent(self, event):
+		if event.button() == QtCore.Qt.MiddleButton:
+			# pretend we released left
+			super().mouseReleaseEvent(QtGui.QMouseEvent(
+				event.type(),
+				event.pos(),
+				QtCore.Qt.LeftButton,
+				QtCore.Qt.LeftButton,
+				event.modifiers()
+			));
+		else:
+			super().mouseReleaseEvent(event);
 		pass
 
 	def mouseMoveEvent(self, event):
 		if event.modifiers() & QtCore.Qt.ControlModifier:
+			self.oldAngle = self.angle;
 			delta = self.point - event.pos()
 			self.zoom = self.oldZoom + (delta.y() / 100) * self.oldZoom
 			self.updateTransform()
 			pass
 		elif event.modifiers() & QtCore.Qt.ShiftModifier:
+			self.oldZoom = self.zoom;
 			center = QtCore.QPoint(self.size().width()//2, self.size().height()//2)
 			delta = center - event.pos()
 			theta = math.atan2(delta.y(), delta.x())
@@ -97,6 +123,7 @@ class Subview(QtWidgets.QGraphicsView):
 			self.updateTransform()
 			pass
 		else:
+			self.oldAngle = self.angle;
 			self.oldZoom = self.zoom;
 			super().mouseMoveEvent(event);
 			pass
