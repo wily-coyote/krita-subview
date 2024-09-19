@@ -299,6 +299,8 @@ class SubviewWidget(krita.DockWidget):
 	def enableControls(self, enabled):
 		self.resetButton.setEnabled(enabled)
 		self.closeButton.setEnabled(enabled)
+		self.mirrorButton.setEnabled(enabled)
+		self.angleSpin.setEnabled(enabled)
 		self.zoomCombo.setEnabled(enabled)
 		self.zoomSlider.setEnabled(enabled)
 		if enabled is True:
@@ -307,6 +309,7 @@ class SubviewWidget(krita.DockWidget):
 			self.view.setDragMode(QtWidgets.QGraphicsView.NoDrag)
 
 	def closeImage(self):
+		self.view.resetView()
 		self.openImage("")
 
 	def openImage(self, path):
