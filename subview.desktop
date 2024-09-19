@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Service
+ServiceTypes=Krita/PythonPlugin
+X-KDE-Library=subview
+X-Python-2-Compatible=false
+X-Krita-Manual=Manual.html
+Name=Subview
+Comment=Clip Studio Paint-style reference viewer

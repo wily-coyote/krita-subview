@@ -1,0 +1,5 @@
+Subview is a Krita docker based on Clip Studio Paint's Sub View.
+It has rotating and mirroring.
+
+Some of the math is based on my fork of https://github.com/antoine-roux/krita-plugin-reference.
+It is licensed under GPLv3.
