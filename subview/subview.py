@@ -64,7 +64,7 @@ class Subview(QtWidgets.QGraphicsView):
 		if self.pixmapItem.pixmap().isNull():
 			self.resetTransform()
 			return
-		self.zoom = min(max( self.minZoom(), self.zoom), 32.0)
+		self.zoom = min(max(self.minZoom(), self.zoom), 32.0)
 		self.angle = self.angle % 360
 		self.resetTransform()
 		self.scale(self.zoom, self.zoom)
@@ -116,13 +116,13 @@ class Subview(QtWidgets.QGraphicsView):
 		pass
 
 	def mouseMoveEvent(self, event: QtGui.QMouseEvent):
-		if event.modifiers() & QtCore.Qt.ControlModifier:
+		if event.buttons() & QtCore.Qt.LeftButton and event.modifiers() & QtCore.Qt.ControlModifier:
 			self.oldAngle = self.angle;
 			delta = self.point - event.pos()
 			self.zoom = self.oldZoom + (delta.y() / 100) * self.oldZoom
 			self.updateTransform()
 			pass
-		elif event.modifiers() & QtCore.Qt.ShiftModifier:
+		elif event.buttons() & QtCore.Qt.LeftButton and event.modifiers() & QtCore.Qt.ShiftModifier:
 			self.oldZoom = self.zoom;
 			center = QtCore.QPointF(self.size().width()/2, self.size().height()/2)
 			delta = center - event.pos()
@@ -192,6 +192,7 @@ class SubviewWidget(krita.DockWidget):
 		self.view.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
 		self.view.setRenderHints(QtGui.QPainter.Antialiasing | QtGui.QPainter.SmoothPixmapTransform)
 		self.view.transformUpdated.connect(self.transformUpdated)
+		self.view.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
 
 		self.openButton = QtWidgets.QPushButton(self)
 		self.openButton.setIcon(Krita.instance().icon("document-open"))
@@ -213,6 +214,17 @@ class SubviewWidget(krita.DockWidget):
 		self.closeButton.setIcon(Krita.instance().icon("dialog-cancel"))
 		self.closeButton.pressed.connect(self.closeImage)
 		self.closeButton.setToolTip("Close image")
+
+		self.openAction = QtWidgets.QAction("Open image")
+		self.openAction.triggered.connect(self.openButton.click)
+		self.closeAction = QtWidgets.QAction("Close image")
+		self.closeAction.triggered.connect(self.closeButton.click)
+		self.resetAction = QtWidgets.QAction("Reset view")
+		self.resetAction.triggered.connect(self.resetButton.click)
+
+		self.view.addAction(self.openAction)
+		self.view.addAction(self.closeAction)
+		self.view.addAction(self.resetAction)
 
 		self.angleSpin = QtWidgets.QDoubleSpinBox(self)
 		self.angleSpin.setToolTip("Angle")
@@ -310,6 +322,8 @@ class SubviewWidget(krita.DockWidget):
 		self.resetButton.setEnabled(enabled)
 		self.closeButton.setEnabled(enabled)
 		self.mirrorButton.setEnabled(enabled)
+		self.resetAction.setEnabled(enabled)
+		self.closeAction.setEnabled(enabled)
 		self.angleSpin.setEnabled(enabled)
 		self.zoomCombo.setEnabled(enabled)
 		self.zoomSlider.setEnabled(enabled)
