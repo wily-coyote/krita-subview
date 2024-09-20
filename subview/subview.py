@@ -26,7 +26,7 @@ DOCKER_TITLE = 'Subview'
 class Subview(QtWidgets.QGraphicsView):
 	transformUpdated = Qt.pyqtSignal()
 
-	def __init__(self, scene, parent, pixmapItem):
+	def __init__(self, scene: QtWidgets.QGraphicsScene, parent: QtWidgets.QWidget, pixmapItem: QtWidgets.QGraphicsPixmapItem):
 		super().__init__(scene, parent)
 		self.setAcceptDrops(True)
 		self.pixmapItem = pixmapItem
@@ -43,12 +43,22 @@ class Subview(QtWidgets.QGraphicsView):
 			self.updateTransform()
 			return
 		size = self.pixmapItem.pixmap().size()
-		maxLength = max(size.width(), size.height())
+		(maxLength, unit) = self.longestUnit(size)
 		self.setSceneRect(-maxLength, -maxLength, maxLength*2+size.width(), maxLength*2+size.height())
 		self.centerOn(size.width()/2, size.height()/2)
-		self.zoom = self.size().height() / size.height()
-		self.angle = 0
+		if (size.width() / size.height()) > (self.size().width() / self.size().height()):
+			self.zoom = self.size().width() / size.width()
+		else:
+			self.zoom = self.size().height() / size.height()
+		self.angle = 0.0
 		self.updateTransform()
+
+	def longestUnit(self, size: QtCore.QSize) -> (int, str):
+		width = size.width()
+		height = size.height()
+		if width > height:
+			return width, "width"
+		return height, "height"
 
 	def updateTransform(self, emit=True):
 		if self.pixmapItem.pixmap().isNull():
@@ -64,17 +74,17 @@ class Subview(QtWidgets.QGraphicsView):
 		if emit is True:
 			self.transformUpdated.emit()
 
-	def minZoom(self):
-		size = self.pixmapItem.pixmap().size()
-		return (self.size().height() / size.height())*.15
+	def minZoom(self) -> float:
+		longest, unit = self.longestUnit(self.pixmapItem.pixmap().size())
+		return (getattr(self.size(), unit)() / longest)*.15
 
-	def dragEnterEvent(self, event):
+	def dragEnterEvent(self, event: QtGui.QDragEnterEvent):
 		return self.parent().dragEnterEvent(event)
 
-	def dropEvent(self, event):
+	def dropEvent(self, event: QtGui.QDropEvent):
 		return self.parent().dropEvent(event)
 
-	def mousePressEvent(self, event):
+	def mousePressEvent(self, event: QtGui.QMouseEvent):
 		self.oldZoom = self.zoom;
 		self.oldAngle = self.angle;
 		self.point = event.pos()
@@ -91,7 +101,7 @@ class Subview(QtWidgets.QGraphicsView):
 			super().mousePressEvent(event);
 		pass
 
-	def mouseReleaseEvent(self, event):
+	def mouseReleaseEvent(self, event: QtGui.QMouseEvent):
 		if event.button() == QtCore.Qt.MiddleButton:
 			# pretend we released left
 			super().mouseReleaseEvent(QtGui.QMouseEvent(
@@ -105,7 +115,7 @@ class Subview(QtWidgets.QGraphicsView):
 			super().mouseReleaseEvent(event);
 		pass
 
-	def mouseMoveEvent(self, event):
+	def mouseMoveEvent(self, event: QtGui.QMouseEvent):
 		if event.modifiers() & QtCore.Qt.ControlModifier:
 			self.oldAngle = self.angle;
 			delta = self.point - event.pos()
@@ -114,7 +124,7 @@ class Subview(QtWidgets.QGraphicsView):
 			pass
 		elif event.modifiers() & QtCore.Qt.ShiftModifier:
 			self.oldZoom = self.zoom;
-			center = QtCore.QPoint(self.size().width()//2, self.size().height()//2)
+			center = QtCore.QPointF(self.size().width()/2, self.size().height()/2)
 			delta = center - event.pos()
 			theta = math.atan2(delta.y(), delta.x())
 			delta = center - self.point
@@ -128,10 +138,10 @@ class Subview(QtWidgets.QGraphicsView):
 			super().mouseMoveEvent(event);
 			pass
 
-	def resizeEvent(self, event):
+	def resizeEvent(self, event: QtGui.QResizeEvent):
 		self.updateTransform()
 
-	def wheelEvent(self, event):
+	def wheelEvent(self, event: QtGui.QWheelEvent):
 		numDegrees = event.angleDelta();
 		if not numDegrees.isNull():
 			self.zoom = self.zoom + (numDegrees.y() / 750) * self.zoom;
@@ -250,20 +260,20 @@ class SubviewWidget(krita.DockWidget):
 
 		pass
 
-	def angleSpun(self, value):
+	def angleSpun(self, value: float):
 		self.view.angle = value
 		self.view.updateTransform(emit=False)
 
-	def mirrorView(self, checked):
+	def mirrorView(self, checked: bool):
 		self.view.mirrored = checked
 		self.view.updateTransform()
 
-	def comboChanged(self, idx):
+	def comboChanged(self, idx: int):
 		if idx >= 0 and idx < len(self.zoomPresets):
 			self.view.zoom = self.zoomPresets[idx]/100.0
 			self.view.updateTransform()
 
-	def sliderChanged(self, newval):
+	def sliderChanged(self, newval: int):
 		self.view.zoom = self.valueSliderToZoom(newval)
 		self.view.updateTransform(emit=False)
 
@@ -272,22 +282,22 @@ class SubviewWidget(krita.DockWidget):
 		self.zoomSlider.setValue(int(self.valueZoomToSlider(self.view.zoom)))
 		self.angleSpin.setValue(self.view.angle)
 
-	def valueSliderToZoom(self, x):
+	def valueSliderToZoom(self, x: float):
 		# min .125, max 32
 		minZoom = self.view.minZoom()
 		return math.pow(32/minZoom, x/16000.0)*minZoom
 
-	def valueZoomToSlider(self, x):
+	def valueZoomToSlider(self, x: float):
 		# thanks wfa
 		minZoom = self.view.minZoom()
 		return (16000.0*math.log(x/minZoom)) / math.log(32/minZoom)
 
-	def dragEnterEvent(self, event):
+	def dragEnterEvent(self, event: QtGui.QDragEnterEvent):
 		if event.mimeData().hasUrls():
 			event.acceptProposedAction()
 		pass
 
-	def dropEvent(self, event):
+	def dropEvent(self, event: QtGui.QDropEvent):
 		urls = event.mimeData().urls()
 		if len(urls) > 0:
 			path = urls[0]
@@ -296,7 +306,7 @@ class SubviewWidget(krita.DockWidget):
 				event.acceptProposedAction()
 		pass
 
-	def enableControls(self, enabled):
+	def enableControls(self, enabled: bool):
 		self.resetButton.setEnabled(enabled)
 		self.closeButton.setEnabled(enabled)
 		self.mirrorButton.setEnabled(enabled)
@@ -312,7 +322,7 @@ class SubviewWidget(krita.DockWidget):
 		self.view.resetView()
 		self.openImage("")
 
-	def openImage(self, path):
+	def openImage(self, path: str):
 		self.pixmap = Qt.QPixmap(path)
 		self.pixmapItem.setPixmap(self.pixmap)
 		self.enableControls(not self.pixmap.isNull())
@@ -332,6 +342,6 @@ class SubviewWidget(krita.DockWidget):
 
 	# notifies when views are added or removed
 	# 'pass' means do not do anything
-	def canvasChanged(self, canvas):
+	def canvasChanged(self, canvas: krita.Canvas):
 		pass
 
