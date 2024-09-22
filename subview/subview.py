@@ -116,13 +116,13 @@ class Subview(QtWidgets.QGraphicsView):
 		pass
 
 	def mouseMoveEvent(self, event: QtGui.QMouseEvent):
-		if event.buttons() & QtCore.Qt.LeftButton and event.modifiers() & QtCore.Qt.ControlModifier:
+		if event.buttons() & (QtCore.Qt.LeftButton | QtCore.Qt.MiddleButton) and event.modifiers() & QtCore.Qt.ControlModifier:
 			self.oldAngle = self.angle;
 			delta = self.point - event.pos()
 			self.zoom = self.oldZoom + (delta.y() / 100) * self.oldZoom
 			self.updateTransform()
 			pass
-		elif event.buttons() & QtCore.Qt.LeftButton and event.modifiers() & QtCore.Qt.ShiftModifier:
+		elif event.buttons() & (QtCore.Qt.LeftButton | QtCore.Qt.MiddleButton) and event.modifiers() & QtCore.Qt.ShiftModifier:
 			self.oldZoom = self.zoom;
 			center = QtCore.QPointF(self.size().width()/2, self.size().height()/2)
 			delta = center - event.pos()
@@ -151,9 +151,9 @@ class Subview(QtWidgets.QGraphicsView):
 class SubviewWidget(krita.DockWidget):
 	zoomPresets = [
 		25,
-		33.33,
+		33.3333,
 		50,
-		66.66,
+		66.6666,
 		75,
 		100,
 		200,
@@ -243,7 +243,8 @@ class SubviewWidget(krita.DockWidget):
 		self.buttons.addWidget(self.closeButton, 0)
 
 		self.zoomCombo = QtWidgets.QComboBox(self)
-		self.zoomCombo.addItems(["%.2d%%" % x for x in self.zoomPresets])
+		self.zoomCombo.addItems(["%.2f%%" % x for x in self.zoomPresets])
+		self.zoomCombo.setCurrentIndex(self.zoomPresets.index(100))
 		self.zoomCombo.currentIndexChanged.connect(self.comboChanged)
 
 		self.zoomSlider = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
@@ -269,7 +270,6 @@ class SubviewWidget(krita.DockWidget):
 		if lastfile is not None:
 			self.openImage(lastfile)
 			self.view.resetView()
-
 		pass
 
 	def angleSpun(self, value: float):
