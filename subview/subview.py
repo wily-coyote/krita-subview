@@ -247,7 +247,7 @@ class SubviewWidget(krita.DockWidget):
 		self.zoomCombo = QtWidgets.QComboBox(self)
 		self.zoomCombo.addItems(["%.2f%%" % x for x in self.zoomPresets])
 		self.zoomCombo.setCurrentIndex(self.zoomPresets.index(100))
-		self.zoomCombo.currentIndexChanged.connect(self.comboChanged)
+		self.zoomCombo.activated.connect(self.comboChanged)
 
 		self.zoomSlider = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
 		self.zoomSlider.setMinimum(0)
