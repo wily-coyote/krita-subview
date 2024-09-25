@@ -142,10 +142,12 @@ class Subview(QtWidgets.QGraphicsView):
 		self.updateTransform()
 
 	def wheelEvent(self, event: QtGui.QWheelEvent):
+		self.setTransformationAnchor(QtWidgets.QGraphicsView.AnchorUnderMouse)
 		numDegrees = event.angleDelta();
 		if not numDegrees.isNull():
 			self.zoom = self.zoom + (numDegrees.y() / 750) * self.zoom;
 		self.updateTransform()
+		self.setTransformationAnchor(QtWidgets.QGraphicsView.AnchorViewCenter)
 		event.accept();
 
 class SubviewWidget(krita.DockWidget):
