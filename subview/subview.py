@@ -124,7 +124,7 @@ class Subview(QtWidgets.QGraphicsView):
 			self.oldAngle = self.angle;
 			delta = self.point - event.pos()
 			self.zoom = self.oldZoom + (delta.y() / 100) * self.oldZoom
-			self.updateTransform(center=True)
+			self.updateTransform()
 			pass
 		elif event.buttons() & (QtCore.Qt.LeftButton | QtCore.Qt.MiddleButton) and event.modifiers() & QtCore.Qt.ShiftModifier:
 			self.oldZoom = self.zoom;
@@ -134,7 +134,7 @@ class Subview(QtWidgets.QGraphicsView):
 			delta = center - self.point
 			theta = theta - math.atan2(delta.y(), delta.x())
 			self.angle = self.oldAngle + math.degrees(theta)
-			self.updateTransform(center=True)
+			self.updateTransform()
 			pass
 		else:
 			self.oldAngle = self.angle;
