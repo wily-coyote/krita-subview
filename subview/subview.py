@@ -28,6 +28,7 @@ class Subview(QtWidgets.QGraphicsView):
 
 	def __init__(self, scene: QtWidgets.QGraphicsScene, parent: QtWidgets.QWidget, pixmapItem: QtWidgets.QGraphicsPixmapItem):
 		super().__init__(scene, parent)
+		self.setTransformationAnchor(QtWidgets.QGraphicsView.AnchorUnderMouse)
 		self.setAcceptDrops(True)
 		self.pixmapItem = pixmapItem
 		self.zoom = 0.0
@@ -60,7 +61,9 @@ class Subview(QtWidgets.QGraphicsView):
 			return width, "width"
 		return height, "height"
 
-	def updateTransform(self, emit=True):
+	def updateTransform(self, emit=True, center=True):
+		if center is True:
+			self.setTransformationAnchor(QtWidgets.QGraphicsView.AnchorViewCenter)
 		if self.pixmapItem.pixmap().isNull():
 			self.resetTransform()
 			return
@@ -73,6 +76,7 @@ class Subview(QtWidgets.QGraphicsView):
 			self.scale(-1.0, 1.0)
 		if emit is True:
 			self.transformUpdated.emit()
+		self.setTransformationAnchor(QtWidgets.QGraphicsView.AnchorViewCenter)
 
 	def minZoom(self) -> float:
 		longest, unit = self.longestUnit(self.pixmapItem.pixmap().size())
@@ -120,7 +124,7 @@ class Subview(QtWidgets.QGraphicsView):
 			self.oldAngle = self.angle;
 			delta = self.point - event.pos()
 			self.zoom = self.oldZoom + (delta.y() / 100) * self.oldZoom
-			self.updateTransform()
+			self.updateTransform(center=True)
 			pass
 		elif event.buttons() & (QtCore.Qt.LeftButton | QtCore.Qt.MiddleButton) and event.modifiers() & QtCore.Qt.ShiftModifier:
 			self.oldZoom = self.zoom;
@@ -130,7 +134,7 @@ class Subview(QtWidgets.QGraphicsView):
 			delta = center - self.point
 			theta = theta - math.atan2(delta.y(), delta.x())
 			self.angle = self.oldAngle + math.degrees(theta)
-			self.updateTransform()
+			self.updateTransform(center=True)
 			pass
 		else:
 			self.oldAngle = self.angle;
@@ -139,6 +143,7 @@ class Subview(QtWidgets.QGraphicsView):
 			pass
 
 	def resizeEvent(self, event: QtGui.QResizeEvent):
+		self.setTransformationAnchor(QtWidgets.QGraphicsView.AnchorViewCenter)
 		self.updateTransform()
 
 	def wheelEvent(self, event: QtGui.QWheelEvent):
@@ -146,8 +151,7 @@ class Subview(QtWidgets.QGraphicsView):
 		numDegrees = event.angleDelta();
 		if not numDegrees.isNull():
 			self.zoom = self.zoom + (numDegrees.y() / 750) * self.zoom;
-		self.updateTransform()
-		self.setTransformationAnchor(QtWidgets.QGraphicsView.AnchorViewCenter)
+		self.updateTransform(center=False)
 		event.accept();
 
 class SubviewWidget(krita.DockWidget):
