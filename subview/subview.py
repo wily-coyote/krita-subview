@@ -54,6 +54,13 @@ class Subview(QtWidgets.QGraphicsView):
 		self.angle = 0.0
 		self.updateTransform()
 
+	def resetAngle(self):
+		if self.pixmapItem.pixmap().isNull():
+			self.updateTransform()
+			return
+		self.angle = 0.0
+		self.updateTransform()
+
 	def longestUnit(self, size: QtCore.QSize) -> (int, str):
 		width = size.width()
 		height = size.height()
@@ -154,6 +161,13 @@ class Subview(QtWidgets.QGraphicsView):
 		self.updateTransform(center=False)
 		event.accept();
 
+class SubviewDial(QtWidgets.QDial):
+	specialPressed = Qt.pyqtSignal()
+	def mousePressEvent(self, event: QtGui.QMouseEvent):
+		if event.button() & (QtCore.Qt.MiddleButton | QtCore.Qt.RightButton):
+			self.specialPressed.emit()
+		super().mousePressEvent(event);
+
 class SubviewWidget(krita.DockWidget):
 	zoomPresets = [
 		25,
@@ -181,7 +195,8 @@ class SubviewWidget(krita.DockWidget):
 		lastfile = Krita.readSetting("subview_docker", "lastfile", None)
 		self.setWindowTitle(DOCKER_TITLE)
 		self.setAcceptDrops(True)
-
+		
+		self.updating = False
 		self.widget = QtWidgets.QWidget()
 
 		self.layout = QtWidgets.QVBoxLayout(self)
@@ -235,15 +250,26 @@ class SubviewWidget(krita.DockWidget):
 		self.angleSpin = QtWidgets.QDoubleSpinBox(self)
 		self.angleSpin.setToolTip("Angle")
 		self.angleSpin.setWrapping(True)
-		self.angleSpin.setMinimum(0) # TODO: [-180, 180] range
-		self.angleSpin.setMaximum(360)
-		self.angleSpin.setSingleStep(1.0)
+		self.angleSpin.setMinimum(-180)
+		self.angleSpin.setMaximum(179)
+		self.angleSpin.setSingleStep(1.00)
 		self.angleSpin.setSuffix("°")
 		self.angleSpin.valueChanged.connect(self.angleSpun)
+
+		self.angleDial = SubviewDial(self)
+		self.angleDial.setMinimum(-180)
+		self.angleDial.setMaximum(179)
+		self.angleDial.setValue(0)
+		self.angleDial.setWrapping(True)
+		self.angleDial.setNotchesVisible(False)
+		self.angleDial.valueChanged.connect(self.angleDialed)
+		self.angleDial.setMaximumSize(Qt.QSize(24, 24))
+		self.angleDial.specialPressed.connect(self.view.resetAngle)
 
 		self.buttons.addWidget(self.openButton, 0)
 		self.buttons.addWidget(self.resetButton, 0)
 		self.buttons.addWidget(self.mirrorButton, 0)
+		self.buttons.addWidget(self.angleDial, 0)
 		self.buttons.addWidget(self.angleSpin, 0)
 		self.buttons.addStretch(1)
 		self.buttons.addWidget(self.closeButton, 0)
@@ -279,8 +305,16 @@ class SubviewWidget(krita.DockWidget):
 		pass
 
 	def angleSpun(self, value: float):
-		self.view.angle = value
-		self.view.updateTransform(emit=False)
+		if self.updating is False:
+			self.view.angle = value % 360
+			self.angleDial.setValue(int(value))
+			self.view.updateTransform(emit=False)
+
+	def angleDialed(self, value: float):
+		if self.updating is False:
+			self.view.angle = value % 360
+			self.angleSpin.setValue(value)
+			self.view.updateTransform(emit=False)
 
 	def mirrorView(self, checked: bool):
 		self.view.mirrored = checked
@@ -292,13 +326,20 @@ class SubviewWidget(krita.DockWidget):
 			self.view.updateTransform()
 
 	def sliderChanged(self, newval: int):
-		self.view.zoom = self.valueSliderToZoom(newval)
-		self.view.updateTransform(emit=False)
+		if self.updating is False:
+			self.view.zoom = self.valueSliderToZoom(newval)
+			self.view.updateTransform(emit=False)
 
 	@Qt.pyqtSlot()
 	def transformUpdated(self):
+		self.updating = True
 		self.zoomSlider.setValue(int(self.valueZoomToSlider(self.view.zoom)))
-		self.angleSpin.setValue(self.view.angle)
+		piece = self.view.angle
+		if piece >= 180.0:
+			piece = piece - 360
+		self.angleSpin.setValue(piece)
+		self.angleDial.setValue(int(piece))
+		self.updating = False
 
 	def valueSliderToZoom(self, x: float):
 		# min .125, max 32
