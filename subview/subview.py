@@ -263,7 +263,7 @@ class SubviewWidget(krita.DockWidget):
 		self.angleDial.setWrapping(True)
 		self.angleDial.setNotchesVisible(False)
 		self.angleDial.valueChanged.connect(self.angleDialed)
-		self.angleDial.setMaximumSize(Qt.QSize(24, 24))
+		self.angleDial.setMaximumSize(Qt.QSize(32, 32))
 		self.angleDial.specialPressed.connect(self.view.resetAngle)
 
 		self.buttons.addWidget(self.openButton, 0)
