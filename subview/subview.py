@@ -372,6 +372,7 @@ class SubviewWidget(krita.DockWidget):
 		self.resetAction.setEnabled(enabled)
 		self.closeAction.setEnabled(enabled)
 		self.angleSpin.setEnabled(enabled)
+		self.angleDial.setEnabled(enabled)
 		self.zoomCombo.setEnabled(enabled)
 		self.zoomSlider.setEnabled(enabled)
 		if enabled is True:
