@@ -19,9 +19,12 @@ import PyQt5.QtGui as QtGui
 import PyQt5.Qt as Qt
 import krita as krita
 import math as math
-from os.path import dirname
+import gettext
+from os.path import dirname, join
 
-DOCKER_TITLE = 'Subview'
+gettext.bindtextdomain("subview_docker", join(dirname(__file__), "locale"))
+gettext.textdomain("subview_docker")
+_ = gettext.gettext
 
 class Subview(QtWidgets.QGraphicsView):
 	transformUpdated = Qt.pyqtSignal()
@@ -157,7 +160,7 @@ class Subview(QtWidgets.QGraphicsView):
 		self.setTransformationAnchor(QtWidgets.QGraphicsView.AnchorUnderMouse)
 		numDegrees = event.angleDelta();
 		if not numDegrees.isNull():
-			self.zoom = self.zoom + (numDegrees.y() / 750) * self.zoom;
+			self.zoom = self.zoom + (numDegrees.y() / 400) * self.zoom;
 		self.updateTransform(center=False)
 		event.accept();
 
@@ -193,9 +196,9 @@ class SubviewWidget(krita.DockWidget):
 	def __init__(self):
 		super().__init__()
 		lastfile = Krita.readSetting("subview_docker", "lastfile", None)
-		self.setWindowTitle(DOCKER_TITLE)
+		self.setWindowTitle(_("Subview"))
 		self.setAcceptDrops(True)
-		
+
 		self.updating = False
 		self.widget = QtWidgets.QWidget()
 
@@ -218,29 +221,29 @@ class SubviewWidget(krita.DockWidget):
 		self.openButton = QtWidgets.QPushButton(self)
 		self.openButton.setIcon(Krita.instance().icon("document-open"))
 		self.openButton.pressed.connect(self.openFileDialog)
-		self.openButton.setToolTip("Open image")
+		self.openButton.setToolTip(_("Open image"))
 
 		self.resetButton = QtWidgets.QPushButton(self)
 		self.resetButton.setIcon(Krita.instance().icon("view-refresh"))
 		self.resetButton.pressed.connect(self.view.resetView)
-		self.resetButton.setToolTip("Fit to view")
+		self.resetButton.setToolTip(_("Fit to view"))
 
 		self.mirrorButton = QtWidgets.QPushButton(self)
 		self.mirrorButton.setIcon(Krita.instance().icon("mirror-view"))
 		self.mirrorButton.toggled.connect(self.mirrorView)
 		self.mirrorButton.setCheckable(True)
-		self.mirrorButton.setToolTip("Mirror")
+		self.mirrorButton.setToolTip(_("Mirror"))
 
 		self.closeButton = QtWidgets.QPushButton(self)
 		self.closeButton.setIcon(Krita.instance().icon("dialog-cancel"))
 		self.closeButton.pressed.connect(self.closeImage)
-		self.closeButton.setToolTip("Close image")
+		self.closeButton.setToolTip(_("Close image"))
 
-		self.openAction = QtWidgets.QAction("Open image")
+		self.openAction = QtWidgets.QAction(_("Open image"))
 		self.openAction.triggered.connect(self.openButton.click)
-		self.closeAction = QtWidgets.QAction("Close image")
+		self.closeAction = QtWidgets.QAction(_("Close image"))
 		self.closeAction.triggered.connect(self.closeButton.click)
-		self.resetAction = QtWidgets.QAction("Reset view")
+		self.resetAction = QtWidgets.QAction(_("Reset view"))
 		self.resetAction.triggered.connect(self.resetButton.click)
 
 		self.view.addAction(self.openAction)
@@ -248,7 +251,7 @@ class SubviewWidget(krita.DockWidget):
 		self.view.addAction(self.resetAction)
 
 		self.angleSpin = QtWidgets.QDoubleSpinBox(self)
-		self.angleSpin.setToolTip("Angle")
+		self.angleSpin.setToolTip(_("Angle"))
 		self.angleSpin.setWrapping(True)
 		self.angleSpin.setMinimum(-180)
 		self.angleSpin.setMaximum(179)
@@ -257,6 +260,7 @@ class SubviewWidget(krita.DockWidget):
 		self.angleSpin.valueChanged.connect(self.angleSpun)
 
 		self.angleDial = SubviewDial(self)
+		self.angleDial.setToolTip(_("Angle"))
 		self.angleDial.setMinimum(-180)
 		self.angleDial.setMaximum(179)
 		self.angleDial.setValue(0)
@@ -275,15 +279,16 @@ class SubviewWidget(krita.DockWidget):
 		self.buttons.addWidget(self.closeButton, 0)
 
 		self.zoomCombo = QtWidgets.QComboBox(self)
+		self.zoomCombo.setToolTip(_("Zoom"))
 		self.zoomCombo.addItems(["%.2f%%" % x for x in self.zoomPresets])
 		self.zoomCombo.setCurrentIndex(self.zoomPresets.index(100))
 		self.zoomCombo.activated.connect(self.comboChanged)
 
 		self.zoomSlider = QtWidgets.QSlider(QtCore.Qt.Horizontal, self)
+		self.zoomSlider.setToolTip(_("Zoom"))
 		self.zoomSlider.setMinimum(0)
 		self.zoomSlider.setMaximum(16000)
 		self.zoomSlider.valueChanged.connect(self.sliderChanged)
-		self.zoomSlider.setToolTip("Zoom")
 
 		self.zoom.addWidget(self.zoomCombo, 0)
 		self.zoom.addWidget(self.zoomSlider, 1)
@@ -393,7 +398,7 @@ class SubviewWidget(krita.DockWidget):
 
 	def openFileDialog(self):
 		lastfile = Krita.readSetting("subview_docker", "lastfile", None)
-		dlg = QtWidgets.QFileDialog(self, "Open an image file", "", "")
+		dlg = QtWidgets.QFileDialog(self, _("Open an image file"), "", "")
 		dlg.setFileMode(QtWidgets.QFileDialog.ExistingFile)
 		dlg.setAcceptMode(QtWidgets.QFileDialog.AcceptOpen)
 		if lastfile is not None:
